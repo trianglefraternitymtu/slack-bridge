@@ -1,37 +1,40 @@
 {
-    "name": "Slack Bridged Channels",
-    "description": "Bridging Channels on Slack teams",
-    "repository": "https://github.com/trianglefraternitymtu/slack-bridge",
-    "website": "https://github.com/trianglefraternitymtu/slack-bridge",
-    "keywords": ["django", "channels", "websockets", "slack"],
-    "scripts": {
-        "postdeploy": "python manage.py migrate"
-    },
-    "env": {
-        "DJANGO_SECRET_KEY": {
-            "description": "Django's SECRET_KEY setting",
-            "generator": "secret"
-        },
-        "SLACK_CLIENT_ID": {
-            "description": "Slack App Client ID"
-        },
-        "SLACK_CLIENT_SECRET": {
-            "description": "Slack App Client Secret"
-        },
-        "SLACK_VERIFICATION_TOKEN": {
-            "description": "Slack App verification token",
-            "required":false
-        }
-    },
-    "addons": ["heroku-postgresql", "heroku-redis"],
-    "formation": {
-        "web": {
-            "quantity": 1,
-          " size": "Free"
-        },
-        "worker": {
-            "quantity": 1,
-            "size": "Free"
-        }
-    }
+  "name": "Slack Bridged Channels",
+  "description": "Bridging Channels on Slack teams",
+  "repository": "https://github.com/trianglefraternitymtu/slack-bridge",
+  "website": "https://github.com/trianglefraternitymtu/slack-bridge",
+  "keywords": ["django", "channels", "websockets", "slack"],
+  "scripts": {
+      "postdeploy": "python manage.py migrate"
+  },
+  "env": {
+      "DJANGO_SECRET_KEY": {
+          "description": "Django's SECRET_KEY setting",
+          "generator": "secret"
+      },
+      "SLACK_CLIENT_ID": {
+          "description": "Slack App Client ID"
+      },
+      "SLACK_CLIENT_SECRET": {
+          "description": "Slack App Client Secret"
+      },
+      "SLACK_VERIFICATION_TOKEN": {
+          "description": "Slack App verification token",
+          "required":false
+      }
+  },
+  "addons": ["heroku-postgresql", "heroku-redis"],
+  "formation": {
+      "web": {
+          "quantity": 1,
+          "size": "Free"
+      },
+      "worker": {
+          "quantity": 1,
+          "size": "Free"
+      }
+  },
+  "buildpacks": [{
+    "url": "heroku/ruby"
+  }]
 }

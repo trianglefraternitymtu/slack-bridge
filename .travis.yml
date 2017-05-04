@@ -1,0 +1,13 @@
+language: python
+python:
+  - "3.5.2"
+install:
+  - pip install -r requirements.txt
+  - pip install pylint
+  # - pip install coveralls
+script:
+  - pylint --errors-only server
+  - pylint --errors-only slack
+  - pylint --errors-only website
+  # - coverage run --source=server,slack,website manage.py test
+# after_success: coveralls

@@ -66,7 +66,7 @@ def action(request):
 @require_POST
 def event(request):
     logger.info('Event Push')
-    logger.debug(request.POST)
+    logger.debug(request)
 
     token = request.POST.get('token')
 

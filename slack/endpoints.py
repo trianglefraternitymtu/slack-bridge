@@ -1,7 +1,9 @@
 import logging, os
 
+from . import verified_token
 from slacker import OAuth
 from channels import Channel
+from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET

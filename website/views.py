@@ -5,5 +5,5 @@ import logging
 logger = logging.getLogger('basicLogger')
 
 @require_GET
-def info(request):
+def index(request):
     return redirect('https://github.com/trianglefraternitymtu/slack-bridge')

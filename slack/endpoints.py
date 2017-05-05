@@ -1,4 +1,4 @@
-import logger, os
+import logging, os
 
 from slacker import OAuth
 from channels import Channel

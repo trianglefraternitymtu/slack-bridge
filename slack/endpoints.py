@@ -37,7 +37,7 @@ def auth(request):
 
     if state == 'appAdded' or not state:
 
-        logger.debug("Adding team \"{team_id}\" to the database.".format(data))
+        logger.debug('Adding/updating team "{}" to the database.'.format(data['team_id']))
 
         # Make a new team
         try:
@@ -56,10 +56,11 @@ def auth(request):
 @csrf_exempt
 @require_POST
 def action(request):
-    logger.info('Event Push')
+    logger.info('Action Response')
     logger.debug(request.POST)
 
     # TODO Push processing of the action to the worker process
+    return HttpResponse(status=200)
 
 @csrf_exempt
 @require_POST
@@ -68,12 +69,13 @@ def event(request):
     logger.debug(request.POST)
 
     token = request.POST.get('token')
-    event_type = request.POST.get('type')
-    challenge = request.POST.get('challenge', None)
 
     if not verified_token(token):
         logger.warning("Token verification failed. ({})".format(token))
         return HttpResponse(status=401)
+
+    event_type = request.POST.get('type')
+    challenge = request.POST.get('challenge', None)
 
     if event_type == "url_verification":
         logger.info("URL verification")

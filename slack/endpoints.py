@@ -60,12 +60,11 @@ def action(request):
 @require_POST
 def event(request):
     logger.info('Event Push')
-    body = request.POST.body
-    logger.debug(body)
+    logger.debug(request.POST)
 
-    token = body.get('token')
-    event_type = body.get('type')
-    challenge = body.get('challenge', None)
+    token = request.POST.get('token')
+    event_type = request.POST.get('type')
+    challenge = request.POST.get('challenge', None)
 
     if not verified_token(token):
         logger.warning("Token verification failed. ({})".format(token))

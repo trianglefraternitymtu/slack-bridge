@@ -17,8 +17,13 @@ def auth(request):
     logger.debug(request.GET)
 
     code = request.GET.get('code')
+    logger.debug('Auth code: "{}"'.format(code))
+
     state = request.GET.get('state', None)
+    logger.debug('Passed app state: "{}"'.format(state))
+
     error = request.GET.get('error', None)
+    logger.debug('Passed app error: "{}"'.format(error))
 
     client_id = os.environ.get('SLACK_CLIENT_ID')
     client_secret = os.environ.get('SLACK_CLIENT_SECRET')
@@ -74,5 +79,6 @@ def event(request):
         logger.info("URL verification")
         return JsonResponse({"challenge":challenge})
     else:
+        logger.info('Passing "{}" event onto worker'.format(event_type))
         # TODO: Push processing of the event to the worker process
         return HttpResponse(status=200)

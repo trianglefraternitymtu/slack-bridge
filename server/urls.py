@@ -3,13 +3,12 @@ from django.conf.urls import include, url
 from django.contrib import admin
 admin.autodiscover()
 
-import slack.endpoints
 import website.views
 
 urlpatterns = [
     url(r'^$', website.views.index, name='site-index'),
 
-    url(r'^slack/auth$', slack.endpoints.auth, name='slack-auth'),
-    url(r'^slack/action$', slack.endpoints.action, name='slack-action'),
-    url(r'^slack/event$', slack.endpoints.event, name='slack-event')
+    url(r'^slack/auth$', website.views.slack_auth, name='slack-auth'),
+    url(r'^slack/action$', website.views.slack_action, name='slack-action'),
+    url(r'^slack/event$', website.views.slack_event, name='slack-event')
 ]

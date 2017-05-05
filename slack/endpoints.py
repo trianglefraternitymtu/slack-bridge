@@ -12,7 +12,7 @@ from website.models import Team
 
 logger = logging.getLogger('basicLogger')
 
-def auth(request):
+def slack_auth(request):
     logger.info('Authentication')
     logger.debug(request.GET)
 
@@ -49,13 +49,14 @@ def auth(request):
                             'app_access_token':data['bot']['bot_access_token']
                         })
             logger.info("Team added to database!")
+            return redirect(data['incoming_webhook']['configuration_url'])
         except Exception as e:
             logger.exception(e)
             return redirect('slack-info')
 
 @csrf_exempt
 @require_POST
-def action(request):
+def slack_action(request):
     logger.info('Action Response')
     logger.debug(request.POST)
 
@@ -64,7 +65,7 @@ def action(request):
 
 @csrf_exempt
 @require_POST
-def event(request):
+def slack_event(request):
     logger.info('Event Push')
     logger.debug(request)
 

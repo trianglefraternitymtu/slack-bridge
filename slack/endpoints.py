@@ -1,4 +1,4 @@
-import logging, os
+import logging, os, json
 
 from . import verified_token
 from slacker import OAuth
@@ -12,7 +12,7 @@ from website.models import Team
 
 logger = logging.getLogger('basicLogger')
 
-def slack_auth(request):
+def auth(request):
     logger.info('Authentication')
     logger.debug(request.GET)
 
@@ -56,27 +56,30 @@ def slack_auth(request):
 
 @csrf_exempt
 @require_POST
-def slack_action(request):
+def action(request):
     logger.info('Action Response')
-    logger.debug(request.POST)
+    json_payload = json.loads(request.body.decode())
+    logger.debug(json_payload)
 
     # TODO Push processing of the action to the worker process
+
     return HttpResponse(status=200)
 
 @csrf_exempt
 @require_POST
-def slack_event(request):
+def event(request):
     logger.info('Event Push')
-    logger.debug(request)
+    json_payload = json.loads(request.body.decode())
+    logger.debug(json_payload)
 
-    token = request.POST.get('token')
+    token = json_payload.get('token')
 
     if not verified_token(token):
         logger.warning("Token verification failed. ({})".format(token))
         return HttpResponse(status=401)
 
-    event_type = request.POST.get('type')
-    challenge = request.POST.get('challenge', None)
+    event_type = json_payload.get('type')
+    challenge = json_payload.get('challenge', None)
 
     if event_type == "url_verification":
         logger.info("URL verification")

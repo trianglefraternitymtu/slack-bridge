@@ -46,7 +46,7 @@ def auth(request):
                         defaults = {'app_access_token':data['access_token'],
                             'webhook_url':data['incoming_webhook']['url'],
                             'bot_id':data['bot']['bot_user_id'],
-                            'app_access_token':data['bot']['bot_access_token']
+                            'bot_access_token':data['bot']['bot_access_token']
                         })
             logger.info("Team added to database!")
             return redirect(data['incoming_webhook']['configuration_url'])

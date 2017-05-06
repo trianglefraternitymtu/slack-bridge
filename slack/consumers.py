@@ -16,7 +16,7 @@ def event(message):
 
     event = payload['event']
 
-    local_team = get_object_or_404(Team, team_id=payload['team_id'], pk=1)
+    local_team = get_object_or_404(Team, team_id=payload['team_id'])
     local_team_interface = Slacker(local_team.app_access_token)
 
     if local_team.bot_id == event['user']:

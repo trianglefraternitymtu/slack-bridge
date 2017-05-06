@@ -86,6 +86,8 @@ def event(request):
         return JsonResponse({"challenge":challenge})
     else:
         event_type = json_payload['event']
-        logger.info('Passing "{}" event onto worker'.format(event_type['type']))
-        # TODO: Push processing of the event to the worker process
+        logger.info('Passing "{}" event onto other worker(s)...'.format(event_type['type']))
+
+        Channel("background-slack-event").send(json_payload)
+
         return HttpResponse(status=200)

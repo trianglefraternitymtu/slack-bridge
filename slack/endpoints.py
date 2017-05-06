@@ -72,19 +72,20 @@ def event(request):
     json_payload = json.loads(request.body.decode())
     logger.debug(json_payload)
 
-    token = json_payload.get('token')
+    token = json_payload['token']
 
     if not verified_token(token):
         logger.warning("Token verification failed. ({})".format(token))
         return HttpResponse(status=401)
 
-    event_type = json_payload.get('type')
-    challenge = json_payload.get('challenge', None)
+    event_type = json_payload['type']
 
     if event_type == "url_verification":
         logger.info("URL verification")
+        challenge = json_payload['challenge']
         return JsonResponse({"challenge":challenge})
     else:
-        logger.info('Passing "{}" event onto worker'.format(event_type))
+        event_type = json_payload['event']
+        logger.info('Passing "{}" event onto worker'.format(event_type['type']))
         # TODO: Push processing of the event to the worker process
         return HttpResponse(status=200)

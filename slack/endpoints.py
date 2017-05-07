@@ -49,7 +49,7 @@ def auth(request):
                         })
             logger.info("Team added to database!")
 
-            domain = Slacker(data['access_token']).team.info().data['team']['domain']
+            domain = Slacker(data['access_token']).team.info().body['team']['domain']
 
             return redirect("http://{}.slack.com".format(domain))
         except Exception as e:

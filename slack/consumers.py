@@ -32,8 +32,9 @@ def event(message):
     elif event.get('user') == 'USLACKBOT':
         if "removed from" in event['text']:
             logger.info("Bot was removed from channel {} on team {}".format(event['channel'], local_team.team_id))
-            SharedChannel.objects.get_or_create(channel_id=event['channel'],
-                                                local_team=local_team).delete()
+            left = SharedChannel.objects.get(channel_id=event['channel'],
+                                             local_team=local_team)
+            left.delete()
         else:
             logger.info("Ignoring slackbot updates")
             return
@@ -41,7 +42,7 @@ def event(message):
         user_info = local_team_interface.users.info(event['user']).body['user']
 
         for target in SharedChannel.objects.exclude(channel_id=event['channel'], local_team=local_team):
-            slack = Slacker(target.team.app_access_token)
+            slack = Slacker(target.local_team.app_access_token)
             slack.chat.post_message(text=event.get('text'),
                                     attachments=event.get('attachments'),
                                     channel=target.channel_id,

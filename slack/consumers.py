@@ -1,5 +1,6 @@
 import logging
 
+from functools import partial
 from channels import Channel
 from slacker import Slacker
 from slacker import Error as SlackError
@@ -44,13 +45,17 @@ def event(message):
 
 def share_msg(message):
     logger.info("Executing slack responses")
-    slack = Slacker(message.content['api_token'])
+    data = message.content
+    logger.debug(data)
+    slack = Slacker(data['api_token'])
     func = None
 
-    if message.content['func'] == "message":
-        func = slack.chat.post_message
+    if data['func'] == "message":
+        func = partial(slack.chat.post_message, data['args'].pop('channel'))
 
     if not func:
-        logger.debug(message.content)
-        logger.debug(func)
-        func(**message.content['args'])
+        try:
+            logger.debug(func)
+            func(**data['args'])
+        except Exception as e:
+            logger.exception(e)

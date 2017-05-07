@@ -53,7 +53,7 @@ def share_msg(message):
     if data['func'] == "message":
         func = partial(slack.chat.post_message, data['args'].pop('channel'))
 
-    if not func:
+    if func:
         try:
             logger.debug(func)
             func(**data['args'])

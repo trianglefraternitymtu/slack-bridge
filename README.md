@@ -21,6 +21,21 @@ Requirements:
 
 ## Slack App Entry
 
+Required Scopes
+- channels:history
+- channels:read
+- chat:write:bot
+- groups:history
+- groups:read
+- im:history
+- mpim:history
+- team:read
+- users.profile:read
+- users:read
+- users:read.email
+- reactions:write
+- emoji:read
+
 ## Deploy onto Heroku
 
 Once the App has entry has been made, deploy the application onto Heroku and enter in the values from the App configuration menu from before.

@@ -16,6 +16,7 @@ class WebsiteConfig(AppConfig):
             except SlackError as e:
                 logger.info('Deleting team "{}": {}'.format(ch.local_team.team_id, e))
                 ch.local_team.delete()
+                continue
 
             local_channels = [x['id'] for x in local_channels]
 

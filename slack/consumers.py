@@ -31,12 +31,14 @@ def event(message):
         user_info = local_team_interface.users.info(event['user']).body['user']
 
         args = {
-            "text":event.get('text'),
-            "attachments":event.get('attachments'),
-            "channel":event['channel'],
-            "username":user_info['profile']['real_name'],
-            "icon_url":user_info['profile']['image_192'],
-            "as_user":False
+            "data": {
+                "text":event.get('text'),
+                "attachments":event.get('attachments'),
+                # "channel":event['channel'],
+                "username":user_info['profile']['real_name'],
+                "icon_url":user_info['profile']['image_192'],
+                "as_user":False
+            }
         }
 
     for target in Team.objects.all():#.exclude(team_id=payload['team_id']):

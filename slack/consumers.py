@@ -1,4 +1,4 @@
-import logging, os
+import logging, os, re
 
 from functools import partial
 from channels import Channel
@@ -29,9 +29,11 @@ def event(message):
         SharedChannel.objects.get_or_create(channel_id=event['channel'],
                                             local_team=local_team)
     elif event.get('user') == 'USLACKBOT':
-        if "removed from" in event['text']:
-            logger.info("Bot was removed from channel {} on team {}".format(event['channel'], local_team.team_id))
-            left = SharedChannel.objects.get(channel_id=event['channel'],
+        if "You have been removed from" in event['text']:
+            ch_name = re.findall(r'#(\w+)', event['text'])[0]
+            ch_id = local_team_interface.channels.get_channel_id(ch_name)
+            logger.info('Bot was removed from channel "{}" ({}) on team {}'.format(ch_name, ch_id, local_team.team_id))
+            left = SharedChannel.objects.get(channel_id=ch_id,
                                              local_team=local_team)
             left.delete()
         else:

@@ -21,8 +21,11 @@ def event(message):
     local_team = get_object_or_404(Team, team_id=payload['team_id'])
     local_team_interface = Slacker(local_team.app_access_token)
 
-    if local_team.bot_id == event['user']:
+    if local_team.bot_id == (event.get("bot_id") or event.get('user')):
         logger.info("Ignoring stuff done by own bot...")
+        return
+    elif event.get('user') == 'USLACKBOT':
+        logger.info("Ignoring slackbot updates")
         return
     elif event['type'] == "message":
         user_info = local_team_interface.users.info(event['user']).body['user']
@@ -40,18 +43,20 @@ def event(message):
         Channel("background-slack-share-msg").send({
                                             'func':event['type'],
                                             'args':args,
-                                            'api_token':target.app_access_token
+                                            'api_token':target.app_access_token,
+                                            'webhook_url':target.webhook_url
                                         })
 
 def share_msg(message):
     logger.info("Executing slack responses")
     data = message.content
     logger.debug(data)
-    slack = Slacker(data['api_token'])
+    slack = Slacker(data['api_token'], data['webhook_url'])
     func = None
 
     if data['func'] == "message":
-        func = partial(slack.chat.post_message, data['args'].pop('channel'))
+        func = slack.incomingwebhook.post
+        # func = partial(slack.chat.post_message, data['args'].pop('channel'))
 
     if func:
         try:

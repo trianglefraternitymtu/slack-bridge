@@ -9,7 +9,7 @@ Requirements:
 - virtualenv
 - Heroku CLI
 - Redis
- - You can use the one from your Heroku instance it you know what you're looking for
+ - You can use the one from your Heroku instance, if you know what you're looking for
 
 
 0. Checkout the repository

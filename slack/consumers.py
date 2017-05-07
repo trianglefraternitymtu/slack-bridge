@@ -1,4 +1,4 @@
-import logging
+import logging, os
 
 from functools import partial
 from channels import Channel
@@ -21,14 +21,16 @@ def event(message):
     local_team = get_object_or_404(Team, team_id=payload['team_id'])
     local_team_interface = Slacker(local_team.app_access_token)
 
-    if local_team.bot_id == (event.get("bot_id") or event.get('user')):
-        if event.get("subtype") == "channel_join":
-            logger.info("Bot was added to channel {} on team {}".format(event['channel'], local_team.team_id))
-            SharedChannel.objects.get_or_create(channel_id=event['channel'],
-                                                local_team=local_team)
-        else:
-            logger.info("Ignoring stuff done by own bot...")
-            return
+    if payload.get('api_app_id') == os.environ.get('SLACK_APP_ID'):
+        logger.info("Ignoring stuff sent from myself...")
+    elif event['type'] != "message":
+        logger.warning('Not sure what "{}" event is...'.format(event['type']))
+    elif event.get('subtype') == 'bot_message':
+        logger.info("Ignoring stuff by other bots...")
+    elif event.get("subtype") == "channel_join":
+        logger.info("Bot was added to channel {} on team {}".format(event['channel'], local_team.team_id))
+        SharedChannel.objects.get_or_create(channel_id=event['channel'],
+        local_team=local_team)
     elif event.get('user') == 'USLACKBOT':
         if "removed from" in event['text']:
             logger.info("Bot was removed from channel {} on team {}".format(event['channel'], local_team.team_id))
@@ -38,7 +40,7 @@ def event(message):
         else:
             logger.info("Ignoring slackbot updates")
             return
-    elif event['type'] == "message":
+    else:
         user_info = local_team_interface.users.info(event['user']).body['user']
 
         for target in SharedChannel.objects.exclude(channel_id=event['channel'], local_team=local_team):

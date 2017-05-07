@@ -21,6 +21,9 @@
       "SLACK_VERIFICATION_TOKEN": {
           "description": "Slack App verification token",
           "required":false
+      },
+      "SLACK_APP_ID": {
+          "description": "Slack App ID",
       }
   },
   "addons": ["heroku-postgresql", "heroku-redis"],

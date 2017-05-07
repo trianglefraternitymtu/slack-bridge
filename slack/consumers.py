@@ -43,6 +43,7 @@ def event(message):
                                         })
 
 def share_msg(message):
+    logger.info("Executing slack responses")
     slack = Slacker(message.content['api_token'])
     func = None
 
@@ -50,4 +51,6 @@ def share_msg(message):
         func = slack.chat.post_message
 
     if not func:
+        logger.debug(message.content)
+        logger.debug(func)
         func(**message.content['args'])

@@ -1,7 +1,7 @@
 import logging, os, json
 
 from . import verified_token
-from slacker import OAuth
+from slacker import OAuth, Slacker
 from channels import Channel
 from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
@@ -44,12 +44,14 @@ def auth(request):
             team, created = Team.objects.update_or_create(
                         team_id=data['team_id'],
                         defaults = {'app_access_token':data['access_token'],
-                            'webhook_url':data['incoming_webhook']['url'],
                             'bot_id':data['bot']['bot_user_id'],
                             'bot_access_token':data['bot']['bot_access_token']
                         })
             logger.info("Team added to database!")
-            return redirect(data['incoming_webhook']['configuration_url'])
+
+            domain = Slacker(data['access_token']).team.info().data['team']['domain']
+
+            return redirect("http://{}.slack.com".format(domain))
         except Exception as e:
             logger.exception(e)
             return redirect('slack-info')

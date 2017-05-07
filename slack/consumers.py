@@ -22,11 +22,21 @@ def event(message):
     local_team_interface = Slacker(local_team.app_access_token)
 
     if local_team.bot_id == (event.get("bot_id") or event.get('user')):
-        logger.info("Ignoring stuff done by own bot...")
-        return
+        if event.get("subtype") == "channel_join":
+            logger.info("Bot was added to channel {} on team {}".format(event['channel'], local_team.team_id))
+            SharedChannel.objects.get_or_create(channel_id=event['channel'],
+                                                local_team=local_team)
+        else:
+            logger.info("Ignoring stuff done by own bot...")
+            return
     elif event.get('user') == 'USLACKBOT':
-        logger.info("Ignoring slackbot updates")
-        return
+        if "removed from" in event['text']:
+            logger.info("Bot was removed from channel {} on team {}".format(event['channel'], local_team.team_id))
+            SharedChannel.objects.get_or_create(channel_id=event['channel'],
+                                                local_team=local_team).delete()
+        else:
+            logger.info("Ignoring slackbot updates")
+            return
     elif event['type'] == "message":
         user_info = local_team_interface.users.info(event['user']).body['user']
 

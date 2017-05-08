@@ -38,7 +38,7 @@ def event(message):
 
     elif event.get('user') == 'USLACKBOT':
         if "You have been removed from" in event['text']:
-            ch_name = re.findall(r'#(\w+)', event['text'])[0]
+            ch_name = re.findall(r'#[^A-Z. ]', event['text'])[0]
             ch_id = local_team_interface.channels.get_channel_id(ch_name)
             logger.info('Bot was removed from channel "{}" ({}) on team {}'.format(ch_name, ch_id, local_team.team_id))
             left = SharedChannel.objects.get(channel_id=ch_id,

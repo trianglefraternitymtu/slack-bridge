@@ -16,18 +16,26 @@ def event(message):
     logger.debug(payload)
 
     event = payload['event']
+    text = event.get('text', '')
 
     local_team = get_object_or_404(Team, team_id=payload['team_id'])
     local_team_interface = Slacker(local_team.app_access_token)
 
+
     if event['type'] != "message":
         logger.warning('Not sure what "{}" event is...'.format(event['type']))
+        return
+
     elif event.get('subtype') == 'bot_message':
         logger.info("Ignoring stuff by other bots...")
-    elif event.get("subtype") == "channel_join":
+        return
+
+    elif event.get("subtype") == "channel_join" and event.get("user") == local_team.bot_id:
         logger.info("Bot was added to channel {} on team {}".format(event['channel'], local_team.team_id))
         SharedChannel.objects.get_or_create(channel_id=event['channel'],
                                             local_team=local_team)
+        return
+
     elif event.get('user') == 'USLACKBOT':
         if "You have been removed from" in event['text']:
             ch_name = re.findall(r'#(\w+)', event['text'])[0]
@@ -36,18 +44,40 @@ def event(message):
             left = SharedChannel.objects.get(channel_id=ch_id,
                                              local_team=local_team)
             left.delete()
+
         else:
             logger.info("Ignoring slackbot updates")
-            return
-    else:
-        user_info = local_team_interface.users.info(event['user']).body['user']
 
-        for target in SharedChannel.objects.exclude(channel_id=event['channel'], local_team=local_team):
-            slack = Slacker(target.local_team.app_access_token)
-            slack.chat.post_message(text=event.get('text'),
-                                    attachments=event.get('attachments'),
-                                    channel=target.channel_id,
-                                    username=user_info['profile']['real_name'],
-                                    icon_url=user_info['profile']['image_192'],
-                                    as_user=False
-                                    )
+        return
+    elif event.get('subtype') in ["channel_join", "channel_leave"]:
+        text = '_{}_'.format(text)
+
+    user_info = local_team_interface.users.info(event['user']).body['user']
+
+    sa_text = sanitizeText(local_team_interface, text)
+
+    for target in SharedChannel.objects.exclude(channel_id=event['channel'], local_team=local_team):
+        if target.local_team.team_id == local_team.team_id:
+            t = text
+        else:
+            t = sa_text
+
+        slack = Slacker(target.local_team.app_access_token)
+        slack.chat.post_message(text=t,
+                                attachments=event.get('attachments'),
+                                channel=target.channel_id,
+                                username=user_info['profile']['real_name'],
+                                icon_url=user_info['profile']['image_192'],
+                                as_user=False
+                                )
+
+def sanitizeText(slack, text):
+    members = slack.users.list().body['members']
+    mem_map = [('<@{}>'.format(m['id']), '@{}'.format(m['name'])) for m in members]
+
+    channels = slack.channels.list().body['channels']
+    ch_map = [('<#{}|{}>'.format(c['id'], c['name']), '#{}'.format(c['name'])) for c in channels]
+
+    for k,v in mem_map + ch_map:
+        text = text.replace(k,v)
+    return text

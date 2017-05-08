@@ -9,7 +9,7 @@ Requirements:
 - virtualenv
 - Heroku CLI
 - Redis
- - You can use the one from your Heroku instance it you know what you're looking for
+ - You can use the one from your Heroku instance, if you know what you're looking for
 
 
 0. Checkout the repository
@@ -20,6 +20,21 @@ Requirements:
 # Installation
 
 ## Slack App Entry
+
+Required Scopes
+- channels:history
+- channels:read
+- chat:write:bot
+- groups:history
+- groups:read
+- im:history
+- mpim:history
+- team:read
+- users.profile:read
+- users:read
+- users:read.email
+- reactions:write
+- emoji:read
 
 ## Deploy onto Heroku
 

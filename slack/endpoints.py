@@ -86,10 +86,14 @@ def event(request):
         logger.info("URL verification")
         challenge = json_payload['challenge']
         return JsonResponse({"challenge":challenge})
+    elif "HTTP_X_SLACK_RETRY_NUM" in request.META:
+        logger.info("Received a retry request.")
+        if request.META["HTTP_X_SLACK_RETRY_REASON"] != "http_timeout":
+            logger.warning('Reason for retry was "{}"'.format(request.META["HTTP_X_SLACK_RETRY_REASON"]))
     else:
         event_type = json_payload['event']
         logger.info('Passing "{}" event onto other worker(s)...'.format(event_type['type']))
 
         Channel("background-slack-event").send(json_payload)
 
-        return HttpResponse(status=200)
+    return HttpResponse(status=200)

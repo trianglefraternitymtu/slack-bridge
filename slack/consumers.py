@@ -66,7 +66,7 @@ def event(message):
         slack.chat.post_message(text=t,
                                 attachments=event.get('attachments'),
                                 channel=target.channel_id,
-                                username=user_info['profile']['real_name'],
+                                username=(user_info['profile']['real_name'] or user_info['profile']['name']),
                                 icon_url=user_info['profile']['image_192'],
                                 as_user=False
                                 )

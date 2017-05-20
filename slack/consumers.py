@@ -61,23 +61,24 @@ def update(message):
 
     payload = message.content['payload']
     event = payload['event']
-    user = payload['user']
+    user = message.content['user']
 
-    local_team = get_object_or_404(Team, team_id=payload['team_id'])
-    local_team_interface = Slacker(local_team.app_access_token)
+    team = get_object_or_404(Team, team_id=message.content['team_id'])
+    team_interface = Slacker(team.app_access_token)
 
     if event.get('subtype') == "message_changed":
+        # team_interface.chat.udpate()
         pass
     elif event.get('subtype') == "message_deleted":
+        # team_interface.chat.delete()
         pass
     else:
         if event.get('subtype') in ["channel_join", "channel_leave"]:
             event['text'] = '_{}_'.format(event['text'])
 
-        slack = Slacker(local_team.app_access_token)
-        slack.chat.post_message(text=event['text'],
+        team_interface.chat.post_message(text=event['text'],
                                 attachments=event.get('attachments'),
-                                channel=payload['channel_id'],
+                                channel=message.content['channel_id'],
                                 username=(user['profile']['real_name'] or user['profile']['name']),
                                 icon_url=user['profile']['image_192'],
                                 as_user=False

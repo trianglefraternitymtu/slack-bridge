@@ -9,32 +9,28 @@ from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger('basicLogger')
 
+def action(message):
+    logger.debug("Processing action response.")
+
 def event(message):
     logger.debug("Processing event.")
 
     payload = message.content
-    logger.debug(payload)
-
     event = payload['event']
-    text = event.get('text', '')
 
     local_team = get_object_or_404(Team, team_id=payload['team_id'])
     local_team_interface = Slacker(local_team.app_access_token)
 
-
     if event['type'] != "message":
         logger.warning('Not sure what "{}" event is...'.format(event['type']))
-        return
 
     elif event.get('subtype') == 'bot_message':
         logger.info("Ignoring stuff by other bots...")
-        return
 
     elif event.get("subtype") == "channel_join" and event.get("user") == local_team.bot_id:
         logger.info("Bot was added to channel {} on team {}".format(event['channel'], local_team.team_id))
         SharedChannel.objects.get_or_create(channel_id=event['channel'],
                                             local_team=local_team)
-        return
 
     elif event.get('user') == 'USLACKBOT':
         if "You have been removed from" in event['text']:
@@ -47,31 +43,47 @@ def event(message):
 
         else:
             logger.info("Ignoring slackbot updates")
+    else:
+        user_info = local_team_interface.users.info(event['user']).body['user']
 
-        return
-    elif event.get('subtype') in ["channel_join", "channel_leave"]:
-        text = '_{}_'.format(text)
+        sa_text = _sanitizeText(local_team_interface, event.get('text', ''))
 
-    user_info = local_team_interface.users.info(event['user']).body['user']
+        for target in SharedChannel.objects.exclude(channel_id=event['channel'], local_team=local_team):
+            if target.local_team.team_id != local_team.team_id:
+                event['text'] = sa_text
+            Channel("background-slack-update").send({"payload":payload,
+                                                     "user":user_info,
+                                                     "channel_id":target.channel_id,
+                                                     "team_id":target.local_team.team_id})
 
-    sa_text = sanitizeText(local_team_interface, text)
+def update(message):
+    logger.debug("Pushing update.")
 
-    for target in SharedChannel.objects.exclude(channel_id=event['channel'], local_team=local_team):
-        if target.local_team.team_id == local_team.team_id:
-            t = text
-        else:
-            t = sa_text
+    payload = message.content['payload']
+    event = payload['event']
+    user = payload['user']
 
-        slack = Slacker(target.local_team.app_access_token)
-        slack.chat.post_message(text=t,
+    local_team = get_object_or_404(Team, team_id=payload['team_id'])
+    local_team_interface = Slacker(local_team.app_access_token)
+
+    if event.get('subtype') == "message_changed":
+        pass
+    elif event.get('subtype') == "message_deleted":
+        pass
+    else:
+        if event.get('subtype') in ["channel_join", "channel_leave"]:
+            event['text'] = '_{}_'.format(event['text'])
+
+        slack = Slacker(local_team.app_access_token)
+        slack.chat.post_message(text=event['text'],
                                 attachments=event.get('attachments'),
-                                channel=target.channel_id,
-                                username=(user_info['profile']['real_name'] or user_info['profile']['name']),
-                                icon_url=user_info['profile']['image_192'],
+                                channel=payload['channel_id'],
+                                username=(user['profile']['real_name'] or user['profile']['name']),
+                                icon_url=user['profile']['image_192'],
                                 as_user=False
                                 )
 
-def sanitizeText(slack, text):
+def _sanitizeText(slack, text):
     members = slack.users.list().body['members']
     mem_map = [('<@{}>'.format(m['id']), '@{}'.format(m['name'])) for m in members]
 

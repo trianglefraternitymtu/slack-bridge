@@ -23,7 +23,7 @@ def clear_tags(slack, text):
     return text
 
 def revert_hyperlinks(text):
-    sa_items = re.findall(r'<([^!#]{1}.*?)>', event['message'].get('text', ''))
+    sa_items = re.findall(r'<([^!#]{1}.*?)>', text)
     sa_re = [("<{}>".format(x), x) for x in sa_items]
 
     for k,v in sa_re:

@@ -80,7 +80,7 @@ def update(message):
         msgs = team_interface.channels.history(message.content['channel_id'],
                                                count=100).body['messages']
 
-        sa_text = revert_hyperlinks(text)
+        sa_text = revert_hyperlinks(event['message'].get('text', ''))
 
         for msg in msgs:
             logger.debug(msg.get('text'))

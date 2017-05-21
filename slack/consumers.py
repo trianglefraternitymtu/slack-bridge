@@ -17,6 +17,7 @@ def event(message):
 
     payload = message.content
     event = payload['event']
+    subtype = event.get('subtype')
 
     local_team = get_object_or_404(Team, team_id=payload['team_id'])
     local_team_interface = Slacker(local_team.app_access_token)
@@ -24,10 +25,10 @@ def event(message):
     if event['type'] != "message":
         logger.warning('Not sure what "{}" event is...'.format(event['type']))
 
-    elif event.get('subtype') == 'bot_message':
+    elif subtype == 'bot_message':
         logger.info("Ignoring stuff by other bots...")
 
-    elif event.get("subtype") == "channel_join" and event.get("user") == local_team.bot_id:
+    elif subtype == "channel_join" and event.get("user") == local_team.bot_id:
         logger.info("Bot was added to channel {} on team {}".format(event['channel'], local_team.team_id))
         SharedChannel.objects.get_or_create(channel_id=event['channel'],
                                             local_team=local_team)
@@ -44,7 +45,10 @@ def event(message):
         else:
             logger.info("Ignoring slackbot updates")
     else:
-        user_info = local_team_interface.users.info(event['user']).body['user']
+        if subtype in ('message_changed', 'message_deleted'):
+            user_info = None
+        else:
+            user_info = local_team_interface.users.info(event['user']).body['user']
 
         sa_text = _sanitizeText(local_team_interface, event.get('text', ''))
 
@@ -57,21 +61,47 @@ def event(message):
                                                      "team_id":target.local_team.team_id})
 
 def update(message):
-    logger.debug("Pushing update.")
-
     payload = message.content['payload']
     event = payload['event']
     user = message.content['user']
+    subtype = event.get('subtype')
+    subsubtype = (event.get('message', {}).get('subtype') or event.get('previous_message', {}).get('subtype'))
+
+    logger.debug("Pushing update ({}<{}>).".format(subtype, subsubtype))
 
     team = get_object_or_404(Team, team_id=message.content['team_id'])
     team_interface = Slacker(team.app_access_token)
 
-    if event.get('subtype') == "message_changed":
-        # team_interface.chat.udpate()
-        pass
-    elif event.get('subtype') == "message_deleted":
-        # team_interface.chat.delete()
-        pass
+    if subsubtype == 'bot_message':
+        logger.info("Ignoring stuff by other bots...")
+
+    elif subtype == "message_changed":
+        msgs = team_interface.channels.history(message.content['channel_id'],
+                                               count=100).body['messages']
+
+        for msg in msgs:
+            logger.debug(msg.get('text'))
+            if msg.get('text') == event['previous_message']['text']:
+                logger.info("Found a matching timestamp of {}".format(msg['ts']))
+                team_interface.chat.update(message.content['channel_id'],
+                                           as_user=False,
+                                           ts=msg['ts'],
+                                           text=event['message'].get('text'),
+                                           attachments=event.get('attachments'))
+                break
+
+    elif subtype == "message_deleted":
+        msgs = team_interface.channels.history(message.content['channel_id'],
+                                               count=100).body['messages']
+
+        for msg in msgs:
+            logger.debug(msg.get('text'))
+            if msg.get('text') == event['previous_message']['text']:
+                logger.info("Found a matching timestamp of {}".format(msg['ts']))
+                team_interface.chat.delete(message.content['channel_id'],
+                                           ts=msg['ts'],
+                                           as_user=False)
+                break
     else:
         if event.get('subtype') in ["channel_join", "channel_leave"]:
             event['text'] = '_{}_'.format(event['text'])
@@ -81,8 +111,7 @@ def update(message):
                                 channel=message.content['channel_id'],
                                 username=(user['profile']['real_name'] or user['profile']['name']),
                                 icon_url=user['profile']['image_192'],
-                                as_user=False
-                                )
+                                as_user=False)
 
 def _sanitizeText(slack, text):
     members = slack.users.list().body['members']

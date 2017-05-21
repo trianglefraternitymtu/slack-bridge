@@ -6,6 +6,7 @@ from slacker import Slacker
 from slacker import Error as SlackError
 from website.models import Team, SharedChannel
 from django.shortcuts import get_object_or_404
+from . import clear_tags, revert_hyperlinks
 
 logger = logging.getLogger('basicLogger')
 
@@ -50,7 +51,7 @@ def event(message):
         else:
             user_info = local_team_interface.users.info(event['user']).body['user']
 
-        sa_text = _sanitizeText(local_team_interface, event.get('text', ''))
+        sa_text = clear_tags(local_team_interface, event.get('text', ''))
 
         for target in SharedChannel.objects.exclude(channel_id=event['channel'], local_team=local_team):
             if target.local_team.team_id != local_team.team_id:
@@ -79,6 +80,8 @@ def update(message):
         msgs = team_interface.channels.history(message.content['channel_id'],
                                                count=100).body['messages']
 
+        sa_text = revert_hyperlinks(text)
+
         for msg in msgs:
             logger.debug(msg.get('text'))
             if msg.get('text') == event['previous_message']['text']:
@@ -86,7 +89,7 @@ def update(message):
                 team_interface.chat.update(message.content['channel_id'],
                                            as_user=False,
                                            ts=msg['ts'],
-                                           text=event['message'].get('text'),
+                                           text=sa_text,
                                            attachments=event.get('attachments'))
                 break
 
@@ -112,14 +115,3 @@ def update(message):
                                 username=(user['profile']['real_name'] or user['profile']['name']),
                                 icon_url=user['profile']['image_192'],
                                 as_user=False)
-
-def _sanitizeText(slack, text):
-    members = slack.users.list().body['members']
-    mem_map = [('<@{}>'.format(m['id']), '@{}'.format(m['name'])) for m in members]
-
-    channels = slack.channels.list().body['channels']
-    ch_map = [('<#{}|{}>'.format(c['id'], c['name']), '#{}'.format(c['name'])) for c in channels]
-
-    for k,v in mem_map + ch_map:
-        text = text.replace(k,v)
-    return text

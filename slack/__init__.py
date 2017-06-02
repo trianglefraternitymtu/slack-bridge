@@ -1,4 +1,5 @@
 import os, re
+from website.models import SharedChannel
 
 def error_msg(msg):
     return {
@@ -30,3 +31,11 @@ def revert_hyperlinks(text):
         text = text.replace(k,v)
 
     return text
+
+def get_local_timestamp(interface, ch_id, text, count=100):
+
+    msgs = interface.channels.history(ch_id, count=count).body['messages']
+
+    for msg in msgs:
+        if msg.get('text') == text:
+            return msg['ts']

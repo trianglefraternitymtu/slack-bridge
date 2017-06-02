@@ -6,7 +6,7 @@ from slacker import Slacker
 from slacker import Error as SlackError
 from website.models import Team, SharedChannel
 from django.shortcuts import get_object_or_404
-from . import clear_tags, revert_hyperlinks
+from . import clear_tags, revert_hyperlinks, get_local_timestamp
 
 logger = logging.getLogger('basicLogger')
 
@@ -60,13 +60,25 @@ def event(message):
     else:
         user_info = local_team_interface.users.info(event['user']).body['user']
 
+        threaded_text = None
+        if event.get('thread_ts', event['ts']) != event['ts']:
+            # need to go find the original message text on the target team.
+            msg = local_team_interface.channels.history(event['channel'],
+                                                        inclusive=True,
+                                                        oldest=event['thread_ts'],
+                                                        count=1).body['messages'][0]
+
+            threaded_text = msg['text']
+
         for target in _otherChannels(event['channel'], local_team):
             if target.local_team.team_id != local_team.team_id:
                 payload['event']['text'] = sa_text
-            Channel("background-slack-post").send({"payload":payload,
-                                                   "user":user_info,
-                                                   "channel_id":target.channel_id,
-                                                   "team_id":target.local_team.team_id})
+
+            Channel('background-slack-post').send({'payload':payload,
+                                                   'user':user_info,
+                                                   'channel_id':target.channel_id,
+                                                   'team_id':target.local_team.team_id,
+                                                   'threaded_text':threaded_text})
 
 def _otherChannels(ch_id, team):
     return SharedChannel.objects.exclude(channel_id=ch_id, local_team=team)
@@ -78,7 +90,7 @@ def post(message):
     subtype = event.get('subtype')
     subsubtype = (event.get('message', {}).get('subtype') or event.get('previous_message', {}).get('subtype'))
 
-    logger.debug("Posting message ({}<{}>).".format(subtype, subsubtype))
+    logger.debug("Posting message ({} <{}>).".format(subtype, subsubtype))
 
     team = get_object_or_404(Team, team_id=message.content['team_id'])
     team_interface = Slacker(team.app_access_token)
@@ -86,11 +98,16 @@ def post(message):
     if subtype in ["channel_join", "channel_leave"]:
         event['text'] = '_{}_'.format(event['text'])
 
+    thread_ts = None
+    if message.content['threaded_text']:
+        thread_ts = get_local_timestamp(team_interface, message.content['channel_id'], message.content['threaded_text'])
+
     team_interface.chat.post_message(text=event['text'],
                             attachments=event.get('attachments'),
                             channel=message.content['channel_id'],
                             username=(user['profile']['real_name'] or user['profile']['name']),
                             icon_url=user['profile']['image_192'],
+                            thread_ts=thread_ts,
                             as_user=False)
 
 def update(message):
@@ -105,32 +122,15 @@ def update(message):
     team = get_object_or_404(Team, team_id=message.content['team_id'])
     team_interface = Slacker(team.app_access_token)
 
+    target_ts = get_local_timestamp(team_interface, message.content['channel_id'], event.get('text'))
+
     if subtype == "message_changed":
-        msgs = team_interface.channels.history(message.content['channel_id'],
-                                               count=100).body['messages']
-
-        sa_text = revert_hyperlinks(event['message'].get('text', ''))
-
-        for msg in msgs:
-            logger.debug(msg.get('text'))
-            if msg.get('text') == event['previous_message']['text']:
-                logger.info("Found a matching timestamp of {}".format(msg['ts']))
-                team_interface.chat.update(message.content['channel_id'],
-                                           as_user=False,
-                                           ts=msg['ts'],
-                                           text=sa_text,
-                                           attachments=event['message'].get('attachments'))
-                break
+        sa_text = revert_hyperlinks(event.get('text', ''))
+        team_interface.chat.update(message.content['channel_id'],
+                                   as_user=False, ts=target_ts, text=sa_text,
+                                   attachments=event['message'].get('attachments'))
 
     elif subtype == "message_deleted":
-        msgs = team_interface.channels.history(message.content['channel_id'],
-                                               count=100).body['messages']
-
-        for msg in msgs:
-            logger.debug(msg.get('text'))
-            if msg.get('text') == event['previous_message']['text']:
-                logger.info("Found a matching timestamp of {}".format(msg['ts']))
-                team_interface.chat.delete(message.content['channel_id'],
-                                           ts=msg['ts'],
-                                           as_user=False)
-                break
+        team_interface.chat.delete(message.content['channel_id'],
+                                   ts=target_ts,
+                                   as_user=False)

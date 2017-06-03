@@ -1,4 +1,4 @@
-import logging, json
+import logging
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -12,12 +12,12 @@ logger = logging.getLogger('basicLogger')
 @csrf_exempt
 @require_POST
 def list_members(request):
-    json_payload = json.loads(request.body.decode())
-    logger.debug(json_payload)
+    logger.debug(request)
+    logger.debug(request.POST)
 
-    token = json_payload.get('token')
+    #NOTE: Slash commands are sent in x-www-form-urlencoded format, not JSON
 
-    if not verified_token(token):
+    if not verified_token(request.POST['token']):
         logger.warning("Token verification failed. ({})".format(token))
         return HttpResponse(status=401)
 

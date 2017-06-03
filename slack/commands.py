@@ -37,16 +37,23 @@ def list_members(request):
             roster = team_interface.users.list().body['members']
             filtered_roster = {u['id']:u for u in roster}
 
+            channel_info['members'] = [filtered_roster[x] for x in channel_info['members'] if not filtered_roster[x].get('is_bot')]
+
             fields = []
             for member in channel_info['members']:
-                member_info = filtered_roster[member]
-                fields.append({
-                    'title':(member_info['profile'].get('real_name') or member_info['name']),
+                temp = {
+                    'title':(member['profile'].get('real_name') or member['name']),
                     'short':True
-                })
+                }
+
+                if member['profile'].get('real_name'):
+                    temp['value'] = '@{}'.format(member['name'])
+
+                fields.append(temp)
 
             breakdown.append({
                 'title':team_info['name'],
+                'title_link':'https://{}.slack.com'.format(team_info['domain']),
                 'thumb_url':team_info['icon']['image_88'],
                 'text':'There are {} people from this team on this channel.'.format(len(channel_info['members'])),
                 'fields':fields

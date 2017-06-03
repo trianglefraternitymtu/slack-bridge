@@ -4,7 +4,7 @@ from channels import Channel
 from slacker import Slacker
 from website.models import Team, SharedChannel
 from django.shortcuts import get_object_or_404
-from . import clear_tags, revert_hyperlinks, get_local_timestamp
+from . import clear_tags, revert_hyperlinks, get_local_timestamp, other_channels
 
 logger = logging.getLogger('basicLogger')
 
@@ -48,7 +48,7 @@ def event(message):
             logger.info("Ignoring slackbot updates")
 
     elif subtype in ('message_changed', 'message_deleted'):
-        for target in _otherChannels(event['channel'], local_team):
+        for target in other_channels(event['channel'], local_team):
             if target.local_team.team_id != local_team.team_id:
                 payload['event']['text'] = sa_text
             Channel("background-slack-update").send({"payload":payload,
@@ -68,7 +68,7 @@ def event(message):
 
             threaded_text = msg['text']
 
-        for target in _otherChannels(event['channel'], local_team):
+        for target in other_channels(event['channel'], local_team):
             if target.local_team.team_id != local_team.team_id:
                 payload['event']['text'] = sa_text
 
@@ -77,9 +77,6 @@ def event(message):
                                                    'channel_id':target.channel_id,
                                                    'team_id':target.local_team.team_id,
                                                    'threaded_text':threaded_text})
-
-def _otherChannels(ch_id, team):
-    return SharedChannel.objects.exclude(channel_id=ch_id, local_team=team)
 
 def post(message):
     payload = message.content['payload']
@@ -103,7 +100,7 @@ def post(message):
     team_interface.chat.post_message(text=event['text'],
                             attachments=event.get('attachments'),
                             channel=message.content['channel_id'],
-                            username=(user['profile']['real_name'] or user['profile']['name']),
+                            username=(user['profile'].get('real_name') or user['name']),
                             icon_url=user['profile']['image_192'],
                             thread_ts=thread_ts,
                             as_user=False)

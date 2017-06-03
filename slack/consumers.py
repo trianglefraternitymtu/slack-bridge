@@ -1,9 +1,7 @@
-import logging, os, re
+import logging, re
 
-from functools import partial
 from channels import Channel
 from slacker import Slacker
-from slacker import Error as SlackError
 from website.models import Team, SharedChannel
 from django.shortcuts import get_object_or_404
 from . import clear_tags, revert_hyperlinks, get_local_timestamp
@@ -113,7 +111,6 @@ def post(message):
 def update(message):
     payload = message.content['payload']
     event = payload['event']
-    user = message.content['user']
     subtype = event.get('subtype')
     subsubtype = (event.get('message', {}).get('subtype') or event.get('previous_message', {}).get('subtype'))
 
@@ -122,10 +119,10 @@ def update(message):
     team = get_object_or_404(Team, team_id=message.content['team_id'])
     team_interface = Slacker(team.app_access_token)
 
-    target_ts = get_local_timestamp(team_interface, message.content['channel_id'], event.get('text'))
+    target_ts = get_local_timestamp(team_interface, message.content['channel_id'], event['previous_message'].get('text'))
 
     if subtype == "message_changed":
-        sa_text = revert_hyperlinks(event.get('text', ''))
+        sa_text = revert_hyperlinks(event['message'].get('text', ''))
         team_interface.chat.update(message.content['channel_id'],
                                    as_user=False, ts=target_ts, text=sa_text,
                                    attachments=event['message'].get('attachments'))

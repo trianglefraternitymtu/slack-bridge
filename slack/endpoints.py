@@ -74,7 +74,7 @@ def event(request):
     json_payload = json.loads(request.body.decode())
     logger.debug(json_payload)
 
-    token = json_payload['token']
+    token = json_payload.get('token')
 
     if not verified_token(token):
         logger.warning("Token verification failed. ({})".format(token))

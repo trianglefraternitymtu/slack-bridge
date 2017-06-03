@@ -32,6 +32,9 @@ def revert_hyperlinks(text):
 
     return text
 
+def other_channels(ch_id, team):
+    return SharedChannel.objects.exclude(channel_id=ch_id, local_team=team)
+
 def get_local_timestamp(interface, ch_id, text, count=100):
 
     msgs = interface.channels.history(ch_id, count=count).body['messages']

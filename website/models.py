@@ -9,3 +9,8 @@ class Team(models.Model):
 class SharedChannel(models.Model):
     local_team = models.ForeignKey(Team, on_delete=models.CASCADE)
     channel_id = models.CharField(max_length=12)
+
+class PostedMsg(models.Model):
+    channel = models.ForeignKey(SharedChannel, on_delete=models.CASCADE)
+    timestamp = models.CharField(max_length=18)
+    satellites = models.ManyToManyField('self')

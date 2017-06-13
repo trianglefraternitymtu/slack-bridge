@@ -3,7 +3,7 @@
   "description": "Bridging Channels on Slack teams",
   "repository": "https://github.com/trianglefraternitymtu/slack-bridge",
   "website": "https://github.com/trianglefraternitymtu/slack-bridge",
-  "keywords": ["django", "channels", "websockets", "slack"],
+  "keywords": ["django", "channels", "slack"],
   "scripts": {
       "postdeploy": "python manage.py migrate"
   },
@@ -21,6 +21,10 @@
       "SLACK_VERIFICATION_TOKEN": {
           "description": "Slack App verification token",
           "required":false
+      },
+      "MESSAGE_CACHE_SIZE": {
+          "description": "How many messages should be cached per shared channel",
+          "value":"250"
       }
   },
   "addons": ["heroku-postgresql", "heroku-redis"],

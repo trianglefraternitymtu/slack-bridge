@@ -4,7 +4,7 @@ from channels import Channel
 from slacker import Slacker
 from website.models import Team, SharedChannel, PostedMsg
 from django.shortcuts import get_object_or_404
-from . import clear_tags, revert_hyperlinks, get_local_timestamp, other_channels
+from . import clear_tags, revert_hyperlinks, get_local_timestamp, other_channels, clean_up_channel_cache
 
 logger = logging.getLogger('basicLogger')
 
@@ -75,6 +75,8 @@ def post(message):
         ts = doPost(temp, user_info, target, shared_ch)
 
         msg_set.append(PostedMsg.objects.create(channel=target, timestamp=ts))
+
+        clean_up_channel_cache(target)
 
     for msg in msg_set:
         msg.satellites.add(*[m for m in msg_set if m != msg])

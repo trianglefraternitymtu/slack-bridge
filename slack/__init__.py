@@ -43,3 +43,10 @@ def get_local_timestamp(timestamp, origin, context=None):
         root_msg = root_msg.satellites.get(channel=context)
 
     return root_msg.timestamp, root_msg
+
+def clean_up_channel_cache(channel):
+    limit = int(os.environ['MESSAGE_CACHE_SIZE'])
+
+    msgs = PostedMsg.objects.order_by('timestamp')
+    if len(msgs) > limit:
+        msgs[limit:].delete()

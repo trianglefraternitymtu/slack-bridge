@@ -1,5 +1,6 @@
 import os, re
-from website.models import SharedChannel
+from django.shortcuts import get_object_or_404
+from website.models import SharedChannel, PostedMsg
 
 def error_msg(msg):
     return {
@@ -35,10 +36,10 @@ def revert_hyperlinks(text):
 def other_channels(ch_id, team):
     return SharedChannel.objects.exclude(channel_id=ch_id, local_team=team)
 
-def get_local_timestamp(interface, ch_id, text, count=100):
+def get_local_timestamp(timestamp, origin, context=None):
+    root_msg = get_object_or_404(PostedMsg, timestamp=timestamp, channel=origin)
 
-    msgs = interface.channels.history(ch_id, count=count).body['messages']
+    if context:
+        root_msg = root_msg.satellites.get(channel=context)
 
-    for msg in msgs:
-        if msg.get('text') == text:
-            return msg['ts']
+    return root_msg.timestamp, root_msg

@@ -4,8 +4,8 @@ Application that allows you to create a bridge between two Slack teams, allowing
 ## Local Development
 
 Requirements:
-- Python 3.5
-- Latest version of pip for Python 3.5
+- Python 3.6
+- Latest version of pip for Python 3.6
 - virtualenv
 - Heroku CLI
 - Redis

@@ -4,7 +4,7 @@
   "repository": "https://github.com/trianglefraternitymtu/slack-bridge",
   "website": "https://github.com/trianglefraternitymtu/slack-bridge",
   "keywords": ["django", "channels", "websockets", "slack"],
-  "stack": "heroku-16"
+  "stack": "heroku-16",
   "scripts": {
       "postdeploy": "python manage.py migrate"
   },
